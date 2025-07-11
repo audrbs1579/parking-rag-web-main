@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인천국제공항 통합 안내 챗봇</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+            font-weight: 300;
+        }
+
+        .service-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .service-tab {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .service-tab:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .service-tab.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        .quick-questions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .quick-question {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-question::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .quick-question:hover::before {
+            left: 100%;
+        }
+        
+        .quick-question:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .quick-question.parking { border-left: 4px solid #e74c3c; }
+        .quick-question.facility { border-left: 4px solid #f39c12; }
+        .quick-question.flight { border-left: 4px solid #3498db; }
+        .quick-question.general { border-left: 4px solid #2ecc71; }
+        
+        .chat-container {
+            height: 450px;
+            overflow-y: auto;
+            border: 2px solid #f0f0f0;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            position: relative;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        .message {
+            margin: 15px 0;
+            padding: 18px;
+            border-radius: 20px;
+            max-width: 85%;
+            animation: fadeIn 0.4s ease-in;
+            position: relative;
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .bot-message {
+            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            color: #2c3e50;
+            margin-right: auto;
+            white-space: pre-wrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .message-info {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 18px 25px;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        input[type="text"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        button {
+            padding: 18px 35px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #1f5f8b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 15px;
+            color: #155724;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .service-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .quick-questions {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            button {
+                width: 100%;
+            }
+
+            .chat-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>✈️</span>
+                인천국제공항 통합 안내
+                <span>🏢</span>
+            </h1>
+            <div class="subtitle">주차장 · 시설 · 항공편 정보를 한 번에!</div>
+        </div>
+
+        <div class="service-tabs">
+            <div class="service-tab active" data-category="all">
+                <span>🌟</span> 전체 서비스
+            </div>
+            <div class="service-tab" data-category="parking">
+                <span>🚗</span> 주차장
+            </div>
+            <div class="service-tab" data-category="facility">
+                <span>🏪</span> 시설
+            </div>
+            <div class="service-tab" data-category="flight">
+                <span>✈️</span> 항공편
+            </div>
+        </div>
+
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>실시간 정보 서비스 운영 중</span>
+        </div>
+        
+        <div class="quick-questions" id="quickQuestions">
+            <!-- 전체 서비스 질문들 -->
+            <div class="quick-question general" data-category="all" onclick="askQuestion('DL7897편 탑승 예정인데 남는 시간동안 뭐할까?')">
+                ✈️ 항공편 별 추천 활동
+            </div>
+            <div class="quick-question parking" data-category="all" onclick="askQuestion('T1 단기주차장 현재 상황과 주변 식당')">
+                🚗 주차장 + 주변 시설
+            </div>
+            <div class="quick-question facility" data-category="all" onclick="askQuestion('환전소 위치와 운영시간')">
+                💱 환전소 정보
+            </div>
+            <div class="quick-question flight" data-category="all" onclick="askQuestion('7C1301편 게이트와 도착지 날씨 정보')">
+                🌤️ 항공편 + 날씨
+            </div>
+            
+            <!-- 주차장 전용 질문들 -->
+            <div class="quick-question parking" data-category="parking" style="display: none;" onclick="askQuestion('T1 단기주차장 현재 상황')">
+                🚗 T1 단기주차장 현황
+            </div>
+            <div class="quick-question parking" data-category="parking" style="display: none;" onclick="askQuestion('T2 장기주차장 지금 혼잡도')">
+                🚗 T2 장기주차장 혼잡도
+            </div>
+            <div class="quick-question parking" data-category="parking" style="display: none;" onclick="askQuestion('가장 여유로운 주차장')">
+                🚗 여유로운 주차장
+            </div>
+            
+            <!-- 시설 전용 질문들 -->
+            <div class="quick-question facility" data-category="facility" style="display: none;" onclick="askQuestion('T1 출국장 식당 추천')">
+                🍽️ 출국장 식당 추천
+            </div>
+            <div class="quick-question facility" data-category="facility" style="display: none;" onclick="askQuestion('24시간 운영 편의시설')">
+                🏪 24시간 편의시설
+            </div>
+            <div class="quick-question facility" data-category="facility" style="display: none;" onclick="askQuestion('면세점 위치와 운영시간')">
+                🛍️ 면세점 정보
+            </div>
+            <div class="quick-question facility" data-category="facility" style="display: none;" onclick="askQuestion('T2 환전소 어디 있어?')">
+                💱 T2 환전소 위치
+            </div>
+            
+            <!-- 항공편 전용 질문들 -->
+            <div class="quick-question flight" data-category="flight" style="display: none;" onclick="askQuestion('오늘 일본행 항공편')">
+                🗾 일본행 항공편
+            </div>
+            <div class="quick-question flight" data-category="flight" style="display: none;" onclick="askQuestion('현재 날씨와 항공편 영향')">
+                🌤️ 날씨와 항공편
+            </div>
+            <div class="quick-question flight" data-category="flight" style="display: none;" onclick="askQuestion('지연된 항공편 있나?')">
+                ⏰ 지연 항공편 확인
+            </div>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot-message">
+                안녕하세요! 🎉 인천국제공항 통합 안내 챗봇입니다.
+                
+                🔹 주차장 현황 (혼잡도, 잔여공간)
+                🔹 공항 시설 정보 (환전소, 식당, 면세점 등)
+                🔹 항공편 정보 (출발/도착 시간, 게이트, 날씨)
+                🔹 여행 준비물 및 공항 이용 팁
+                
+                무엇을 도와드릴까요? 😊
+                
+                <div class="message-info">💡 항공편 번호를 포함해서 질문하시면 더 정확한 정보를 제공해드려요!</div>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="questionInput" placeholder="항공편, 주차장, 시설에 대해 궁금한 점을 물어보세요... (예: KE5741편 타는데 뭐할까?)" onkeypress="handleKeyPress(event)">
+            <button onclick="sendQuestion()" id="sendButton">전송</button>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const questionInput = document.getElementById('questionInput');
+        const sendButton = document.getElementById('sendButton');
+        const serviceTabs = document.querySelectorAll('.service-tab');
+        const quickQuestions = document.querySelectorAll('.quick-question');
+
+        // 서비스 탭 전환 기능
+        serviceTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 활성 탭 변경
+                serviceTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 해당 카테고리 질문들 표시
+                const category = tab.dataset.category;
+                quickQuestions.forEach(q => {
+                    if (category === 'all' || q.dataset.category === category) {
+                        q.style.display = 'block';
+                    } else {
+                        q.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        function addMessage(message, isUser = false, category = null, flightNumber = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            let messageContent = message;
+            if (!isUser && (category || flightNumber)) {
+                messageContent += `\n\n<div class="message-info">`;
+                if (category) messageContent += `📂 분류: ${getCategoryEmoji(category)} ${category}`;
+                if (flightNumber) messageContent += ` | ✈️ 항공편: ${flightNumber}`;
+                messageContent += `</div>`;
+            }
+            
+            messageDiv.innerHTML = messageContent.replace(/\n/g, '<br>');
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function getCategoryEmoji(category) {
+            const emojis = {
+                'parking': '🚗',
+                'facility': '🏪',
+                'flight': '✈️',
+                'general': '💡',
+                'mixed': '🌟'
+            };
+            return emojis[category] || '📋';
+        }
+
+        function addLoadingMessage() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message bot-message loading';
+            loadingDiv.innerHTML = '답변을 생성하고 있습니다...';
+            loadingDiv.id = 'loadingMessage';
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return loadingDiv;
+        }
+
+        function removeLoadingMessage() {
+            const loadingMessage = document.getElementById('loadingMessage');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        async function sendQuestion() {
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            // 사용자 메시지 추가
+            addMessage(question, true);
+            
+            // 입력 필드 초기화 및 버튼 비활성화
+            questionInput.value = '';
+            sendButton.disabled = true;
+            
+            // 로딩 메시지 표시
+            const loadingMessage = addLoadingMessage();
+
+            try {
+                // API 호출
+                const response = await fetch('/api/chat_parking_rag', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question
+                    })
+                });
+
+                const data = await response.json();
+                
+                // 로딩 메시지 제거
+                removeLoadingMessage();
+                
+                if (data.status === 'success') {
+                    addMessage(data.answer, false, data.category, data.flight_number);
+                } else {
+                    addMessage(`⚠️ 오류: ${data.message}`, false);
+                }
+                
+            } catch (error) {
+                console.error('API 호출 오류:', error);
+                removeLoadingMessage();
+                addMessage('😅 죄송합니다. 서버 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', false);
+            }
+            
+            // 버튼 재활성화
+            sendButton.disabled = false;
+        }
+
+        function askQuestion(question) {
+            questionInput.value = question;
+            sendQuestion();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendQuestion();
+            }
+        }
+
+        // 초기 포커스 설정
+        questionInput.focus();
+    </script>
+</body>
+</html>
